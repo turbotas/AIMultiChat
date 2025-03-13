@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Chat Room - AIMultiChat{% endblock %}
+{% block content %}
+<h1>Chat Room</h1>
+
+<!-- Participant list display -->
+<div id="participants" class="border rounded p-3 mb-3" style="margin-bottom: 15px;">
+  <strong>Participants:</strong>
+  <ul id="participantList"></ul>
+</div>
+
+<div id="chat" class="border rounded p-3 mb-3" style="height:300px; overflow-y:scroll;">
+  <!-- Chat messages will appear here -->
+  {% for msg in messages %}
+    <p style="margin: 5px 0;">
+      <strong>#{{ msg.room_message_id }} {{ msg.sender_name or 'Anonymous' }}:</strong> {{ msg.message }}
+    </p>
+  {% endfor %}
+</div>
+<div class="input-group mb-3">
+  <input type="text" id="messageInput" class="form-control" placeholder="Type a message..." autocomplete="off">
+  <button onclick="sendMessage()" class="btn btn-primary">Send</button>
+</div>
+<!-- Include Socket.IO -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+<script>
+  const chatId = "{{ chat_id }}";
+  const username = prompt("Enter your name:") || "Anonymous";
+  const socket = io();
+
+  socket.on('connect', () => {
+    console.log("Connected to the server!");
+    socket.emit('join', {chat_id: chatId, username: username});
+    setTimeout(() => {
+      const chatDiv = document.getElementById('chat');
+      chatDiv.scrollTop = chatDiv.scrollHeight; // Scroll to bottom after joining
+    }, 100);
+  });
+
+  socket.on('status', (data) => {
+    console.log("Received status event:", data);
+    const chatDiv = document.getElementById('chat');
+    const p = document.createElement('p');
+    p.textContent = data.msg;
+    chatDiv.appendChild(p);
+    chatDiv.scrollTop = chatDiv.scrollHeight; // Scroll to bottom after message
+  });
+
+  socket.on('chat_message', (data) => {
+    console.log("Received chat_message event:", data);
+    const chatDiv = document.getElementById('chat');
+    const p = document.createElement('p');
+    p.innerHTML = `<strong>#${data.room_message_id} ${data.username}:</strong> ${data.message}`;
+    p.style.margin = '5px 0';
+    chatDiv.appendChild(p);
+    chatDiv.scrollTop = chatDiv.scrollHeight; // Scroll to bottom after message
+  });
+
+  socket.on('participant_update', (data) => {
+    console.log("Received participant_update event:", data);
+    const participantList = document.getElementById('participantList');
+    participantList.innerHTML = ''; // Clear current list
+    data.participants.forEach(participant => {
+      const li = document.createElement('li');
+      li.textContent = participant;
+      participantList.appendChild(li);
+    });
+  });
+
+  function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const message = input.value;
+    if (message.trim() === "") return;
+    socket.emit('chat_message', {
+      chat_id: chatId,
+      username: username,
+      message: message,
+      sender_id: 0  // Placeholder
+    });
+    input.value = "";
+  }
+
+  // Handle 'Enter' key for sending messages
+  document.getElementById('messageInput').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') {
+      sendMessage();
+    }
+  });
+
+  window.onbeforeunload = () => {
+    socket.emit('leave', {chat_id: chatId, username: username});
+  };
+
+  function addAI() {
+    console.log("Sending add_ai event");
+    socket.emit('add_ai', { chat_id: chatId });
+  }
+
+  function removeAI() {
+    console.log("Sending remove_ai event");
+    socket.emit('remove_ai', { chat_id: chatId });
+  }
+</script>
+<h3>AI Personalities</h3>
+<div class="input-group mb-3">
+    <select id="personalitySelector" class="form-select">
+        {% for personality in personalities %}
+            <option value="{{ personality }}">{{ personality }}</option>
+        {% endfor %}
+    </select>
+    <button onclick="addPersonality()" class="btn btn-success">Add Personality</button>
+</div>
+
+<script>
+    function addPersonality() {
+        const selectedPersonality = document.getElementById("personalitySelector").value;
+        socket.emit('add_personality', {
+            chat_id: chatId,
+            personality: selectedPersonality
+        });
+    }
+</script>
+{% endblock %}

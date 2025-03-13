@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Home - AIMultiChat{% endblock %}
+{% block content %}
+<div class="text-center">
+  <h1 class="my-4">Welcome to AIMultiChat</h1>
+  <form action="{{ url_for('create_chat') }}" method="post">
+    <button type="submit" class="btn btn-success">Create a New Chat</button>
+  </form>
+</div>
+{% endblock %}
