@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ 'Edit Chat' if chat else 'Add New Chat' }}</h1>
+
+<form method="POST">
+    <div class="mb-3">
+        <label for="title" class="form-label">Chat Title</label>
+        <input type="text" id="title" name="title" class="form-control" value="{{ chat.title if chat else '' }}" required>
+    </div>
+
+    <div class="form-check">
+        <input type="checkbox" class="form-check-input" id="allow_anonymous" name="allow_anonymous"
+        {% if chat and chat.allow_anonymous %}checked{% endif %}>
+        <label class="form-check-label" for="allow_anonymous">Allow Anonymous Joining</label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Chat</button>
+    <a href="{{ url_for('admin_chat.chat_list') }}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

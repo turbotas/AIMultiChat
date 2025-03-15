@@ -1,8 +1,10 @@
+from flask import session
 from flask_socketio import join_room, leave_room, emit
 from extensions import socketio, db, load_personalities
-from models import ChatHistory
+from models import Chat, ChatHistory
 from datetime import datetime
 from sqlalchemy import func
+import uuid  # For generating anonymous usernames
 
 # Dictionary to track participants per room (chat_id -> set of usernames)
 participants = {}
@@ -10,27 +12,76 @@ participants = {}
 # Load available personalities
 personalities = load_personalities()
 
+@socketio.on('join')
+def handle_join(data):
+    chat_id = str(data.get('chat_id'))
+    username = data.get('username')
+
+    print(f"DEBUG: Checking chat join attempt for chat_id: {chat_id}, username: {username}")
+
+    # Check if chat exists
+    chat = Chat.query.filter_by(join_code=chat_id).first()
+    if not chat:
+        print(f"DEBUG: Chat not found for join_code: {chat_id}")
+        emit('status', {'msg': 'Error: Chat room not found.'})
+        return
+
+    print(f"DEBUG: Chat found! Title: {chat.title}, Allow Anonymous: {chat.allow_anonymous}")
+
+    # Authentication Check for Non-Anonymous Chats
+    if not chat.allow_anonymous:
+        if 'user_id' not in session:
+            print("DEBUG: Access denied - User must be authenticated to join this chat.")
+            emit('status', {'msg': 'Error: Authentication required for this chat.'})
+            return
+        else:
+            print(f"DEBUG: Authenticated user: {session['username']}")
+
+    # Assign anonymous username if unauthenticated
+    if 'user_id' not in session:
+        username = f"anon-{str(uuid.uuid4())[:3]}"
+        print(f"DEBUG: Assigned anonymous username: {username}")
+
+    # Ensure the room join logic is correct
+    print(f"DEBUG: Joining room {chat_id} as {username}")
+    join_room(chat_id)
+
+    if chat_id not in participants:
+        participants[chat_id] = set()
+
+    participants[chat_id].add(username)
+
+    # Enhanced participant debug
+    print(f"DEBUG: Current participants in {chat_id}: {participants[chat_id]}")
+
+    emit('participant_update', {'participants': list(participants[chat_id])}, room=chat_id)
+    emit('status', {'msg': f'{username} has entered the chat.'}, room=chat_id)
+
+
 @socketio.on('add_personality')
 def handle_add_personality(data):
     chat_id = str(data.get('chat_id'))
     personality_name = data.get('personality')
 
+    print(f"DEBUG: Received add_personality event for chat_id: {chat_id} with personality: {personality_name}")
+
     if personality_name not in personalities:
+        print(f"DEBUG: Personality '{personality_name}' not found.")
         emit('status', {'msg': f'Error: Personality "{personality_name}" not found.'}, room=chat_id)
         return
 
-    # Add personality to the room
     join_room(chat_id)
 
-    # Ensure the room has an entry in the participants dictionary
     if chat_id not in participants:
         participants[chat_id] = set()
 
     if personality_name not in participants[chat_id]:
         participants[chat_id].add(personality_name)
-        print(f"{personality_name} added to room {chat_id}")
+        print(f"DEBUG: Added '{personality_name}' to room {chat_id}")
         emit('participant_update', {'participants': list(participants[chat_id])}, room=chat_id)
         emit('status', {'msg': f'{personality_name} has joined the chat.'}, room=chat_id)
+    else:
+        print(f"DEBUG: Personality '{personality_name}' already in room {chat_id}")
 
 
 @socketio.on('remove_personality')
@@ -40,24 +91,9 @@ def handle_remove_personality(data):
 
     if chat_id in participants and personality_name in participants[chat_id]:
         participants[chat_id].remove(personality_name)
-        print(f"{personality_name} removed from room {chat_id}")
+        print(f"DEBUG: {personality_name} removed from room {chat_id}")
         emit('participant_update', {'participants': list(participants[chat_id])}, room=chat_id)
         emit('status', {'msg': f'{personality_name} has left the chat.'}, room=chat_id)
-
-
-@socketio.on('join')
-def handle_join(data):
-    chat_id = str(data.get('chat_id'))
-    username = data.get('username')
-    join_room(chat_id)
-
-    if chat_id not in participants:
-        participants[chat_id] = set()
-    participants[chat_id].add(username)
-
-    print(f"{username} joined room {chat_id}")
-    emit('participant_update', {'participants': list(participants[chat_id])}, room=chat_id)
-    emit('status', {'msg': f'{username} has entered the chat.'}, room=chat_id)
 
 
 @socketio.on('chat_message')

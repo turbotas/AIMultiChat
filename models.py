@@ -1,5 +1,6 @@
 from datetime import datetime
 from extensions import db
+from werkzeug.security import generate_password_hash, check_password_hash
 
 class HumanUser(db.Model):
     __tablename__ = 'human_user'
@@ -18,7 +19,9 @@ class Chat(db.Model):
     __tablename__ = 'chat'
     id = db.Column(db.Integer, primary_key=True)
     owner_user_id = db.Column(db.Integer, db.ForeignKey('human_user.id'))
-    join_code = db.Column(db.String(32), unique=True, nullable=False)
+    join_code = db.Column(db.String(36), unique=True, nullable=False)  # Extended for UUID-like strength
+    title = db.Column(db.String(100), nullable=False)
+    allow_anonymous = db.Column(db.Boolean, default=False)
 
 class ChatParticipant(db.Model):
     __tablename__ = 'chat_participant'
@@ -35,3 +38,16 @@ class ChatHistory(db.Model):
     sender_id = db.Column(db.Integer)  # placeholder for sender ID
     sender_name = db.Column(db.String(64))  # new field to store the sender’s username
     message = db.Column(db.Text)
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(120), nullable=False, unique=True)
+    password_hash = db.Column(db.String(255), nullable=False)
+    friendly_name = db.Column(db.String(100), nullable=True)
+    is_admin = db.Column(db.Boolean, default=False)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)

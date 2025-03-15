@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{{ 'Edit User' if user else 'Add New User' }}</h1>
+
+<form method="POST">
+  <div class="mb-3">
+    <label for="email" class="form-label">Email (Username)</label>
+    <input type="email" class="form-control" id="email" name="email" value="{{ user.username if user else '' }}" required>
+  </div>
+
+  <div class="mb-3">
+    <label for="friendly_name" class="form-label">Friendly Name</label>
+    <input type="text" class="form-control" id="friendly_name" name="friendly_name" value="{{ user.friendly_name if user else '' }}" required>
+  </div>
+
+  <div class="mb-3">
+    <label for="password" class="form-label">Password (Leave blank to keep current)</label>
+    <input type="password" class="form-control" id="password" name="password">
+  </div>
+
+  <div class="mb-3 form-check">
+    <input type="checkbox" class="form-check-input" id="is_admin" name="is_admin" {% if user and user.is_admin %}checked{% endif %}>
+    <label class="form-check-label" for="is_admin">Admin User</label>
+  </div>
+
+  <button type="submit" class="btn btn-primary">Save</button>
+  <a href="{{ url_for('admin.user_list') }}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

@@ -25,12 +25,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
 <script>
   const chatId = "{{ chat_id }}";
-  const username = prompt("Enter your name:") || "Anonymous";
+  const isAuthenticated = "{{ 'user_id' in session }}" === "True";
+  const username = isAuthenticated ? "{{ session['username'] }}" : `anon-${Math.floor(Math.random() * 900) + 100}`;
   const socket = io();
 
   socket.on('connect', () => {
     console.log("Connected to the server!");
-    socket.emit('join', {chat_id: chatId, username: username});
+    socket.emit('join', { chat_id: chatId, username: username });
     setTimeout(() => {
       const chatDiv = document.getElementById('chat');
       chatDiv.scrollTop = chatDiv.scrollHeight; // Scroll to bottom after joining

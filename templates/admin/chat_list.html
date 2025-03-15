@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Manage Chats</h1>
+<a href="{{ url_for('admin_chat.chat_form') }}" class="btn btn-success mb-3">Add New Chat</a>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Join Code</th>
+            <th>Anonymous?</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for chat in chats %}
+        <tr>
+            <td>{{ chat.title }}</td>
+            <td>{{ chat.join_code }}</td>
+            <td>{{ 'Yes' if chat.allow_anonymous else 'No' }}</td>
+            <td>
+                <a href="{{ url_for('admin_chat.chat_form', join_code=chat.join_code) }}" class="btn btn-primary btn-sm">Edit</a>
+                <form action="{{ url_for('admin_chat.chat_delete', join_code=chat.join_code) }}" method="post">
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+                <a href="{{ url_for('chat_room', join_code=chat.join_code) }}" class="btn btn-primary btn-sm">Join</a>  <!-- NEW Join Button -->
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
