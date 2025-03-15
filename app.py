@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash
 from dotenv import load_dotenv
 from extensions import load_personalities
 import os
@@ -36,16 +36,28 @@ def index():
 
 @app.route('/chat/<string:join_code>')
 def chat_room(join_code):
+    # Lookup the chat via join_code
     chat = Chat.query.filter_by(join_code=join_code).first()
     if not chat:
         flash('Error: Chat room not found.', 'danger')
         return redirect(url_for('index'))
 
-    personalities = load_personalities().keys()  # Ensure personalities are loaded
-    messages = ChatHistory.query.filter_by(chat_id=str(chat.id)).order_by(ChatHistory.id).all()
+    # Convert numeric chat.id -> string to store in ChatHistory
+    numeric_chat_id = str(chat.id)
 
-    return render_template('chat.html', chat_id=join_code, messages=messages, personalities=personalities)
+    # Retrieve messages from DB via numeric ID
+    messages = ChatHistory.query.filter_by(chat_id=numeric_chat_id).order_by(ChatHistory.id).all()
 
+    # Provide chat_id to the template as the join_code (used by the client & socket events)
+    # Also load the personalities so the dropdown isn't empty
+    personalities_list = list(load_personalities().keys())
+
+    return render_template(
+        'chat.html',
+        chat_id=join_code,  # Pass the join_code for the user
+        messages=messages,
+        personalities=personalities_list
+    )
 
 if __name__ == '__main__':
     with app.app_context():
@@ -63,5 +75,4 @@ if __name__ == '__main__':
             db.session.commit()
 
     print("🚀 Starting in development mode (no SSL)")
-
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
