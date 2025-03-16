@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session  # <-- import session
 from dotenv import load_dotenv
 import os
 
@@ -49,7 +49,7 @@ def index():
 def chat_room(join_code):
     """
     Shows the chat page for a specific chat,
-    using the alpha-sorted list of personality keys for the dropdown.
+    using the alpha-sorted list of personality keys for the left column.
     """
     chat = Chat.query.filter_by(join_code=join_code).first()
     if not chat:
@@ -61,14 +61,22 @@ def chat_room(join_code):
     # Retrieve messages from DB
     messages = ChatHistory.query.filter_by(chat_id=numeric_chat_id).order_by(ChatHistory.id).all()
 
-    # 2) Instead of LOADED_PERSONALITIES, we do:
+    # Instead of LOADED_PERSONALITIES, we do:
     sorted_personality_keys = sorted(app.loaded_personalities.keys(), key=str.lower)
+
+    # If the user is admin, build up a list of all chats or some subset
+    available_chats = []
+    if session.get('is_admin'):
+        # For example, show all
+        available_chats = Chat.query.all()
 
     return render_template(
         'chat.html',
         chat_id=join_code,  # Pass the join_code for the user
         messages=messages,
-        personalities=sorted_personality_keys
+        personalities=sorted_personality_keys,
+        is_admin=session.get('is_admin', False),
+        available_chats=available_chats  # pass it here
     )
 
 if __name__ == '__main__':
