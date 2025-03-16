@@ -1,4 +1,8 @@
 PERSONALITY_NAME = "Echo Bot"
+PERSONALITY_DESC = "This is a test AI that just mirrors input"
+PERSONALITY_INTELLIGENCE = 0
+# price per million tokens use the dearest of input and output!
+PERSONALITY_COST = 0
 
 BASE_SYSTEM_PROMPT = """
 You are in a multi-person chat. Each message shows the sender name.

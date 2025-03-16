@@ -1,7 +1,129 @@
 {% extends "base.html" %}
 {% block title %}Home - AIMultiChat{% endblock %}
+
 {% block content %}
 <div class="text-center">
   <h1 class="my-4">Welcome to AIMultiChat</h1>
 </div>
+
+{% if personalities and personalities|length > 0 %}
+  <h3 class="mb-3">Available Personalities</h3>
+  <table id="personalityTable" class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        <!-- data-sort-type determines how we parse values for sorting -->
+        <th scope="col" data-sort-type="text"
+            title="The display name of this AI personality. Click to sort.">
+          Name
+        </th>
+        <th scope="col" data-sort-type="text"
+            title="A short description of the AI personality. Click to sort.">
+          Description
+        </th>
+        <th scope="col" data-sort-type="number"
+            title="Rough intelligence rating from 1–10 (or higher). Click to sort.">
+          Intelligence
+        </th>
+        <th scope="col" data-sort-type="currency"
+            title="The cost in dollars ($) per usage. Click to sort.">
+          Cost
+        </th>
+        <th scope="col" data-sort-type="number"
+            title="The maximum context window size in tokens. Click to sort.">
+          Window
+        </th>
+        <th scope="col" data-sort-type="number"
+            title="The maximum number of tokens that can be generated in output. Click to sort.">
+          Max Out Tokens
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in personalities %}
+        <tr>
+          <!-- p.name (text) -->
+          <td>{{ p.name }}</td>
+
+          <!-- p.desc (text) -->
+          <td>{{ p.desc }}</td>
+
+          <!-- p.intelligence (number) -->
+          <td>{{ p.intelligence }}</td>
+
+          <!-- cost: 2 decimal places. We can still parse it with sorting code -->
+          <td>${{ "%.2f"|format(p.cost) }}</td>
+
+          <!-- p.window (number) -->
+          <td>{{ p.window }}</td>
+
+          <!-- p.maxout (number) -->
+          <td>{{ p.maxout }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p class="mt-4">No personalities found. That is odd!</p>
+{% endif %}
+
+<!-- Table-sorting script (unchanged) -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const table = document.getElementById('personalityTable');
+  if (!table) return;
+
+  const headers = table.querySelectorAll('thead th');
+
+  // We'll track the current sort state for each column in an array
+  // false => ascending, true => descending
+  let sortDirections = Array.from(headers).map(() => false);
+
+  headers.forEach((th, colIndex) => {
+    th.addEventListener('click', () => {
+      // Toggle the sort direction for this column
+      sortDirections[colIndex] = !sortDirections[colIndex];
+      const isDescending = sortDirections[colIndex];
+      const sortType = th.getAttribute('data-sort-type') || 'text';
+
+      sortTableByColumn(table, colIndex, isDescending, sortType);
+    });
+  });
+
+  // The sorting function
+  function sortTableByColumn(table, colIndex, descending, sortType) {
+    const tbody = table.querySelector('tbody');
+    // Convert NodeList -> array
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+
+    rows.sort((a, b) => {
+      const cellA = a.querySelectorAll('td')[colIndex].innerText.trim();
+      const cellB = b.querySelectorAll('td')[colIndex].innerText.trim();
+
+      // Parse according to sortType
+      let valA, valB;
+
+      if (sortType === 'number') {
+        // parse as float
+        valA = parseFloat(cellA) || 0;
+        valB = parseFloat(cellB) || 0;
+      } else if (sortType === 'currency') {
+        // remove any $ sign, parse float
+        valA = parseFloat(cellA.replace(/[^0-9.]/g, '')) || 0;
+        valB = parseFloat(cellB.replace(/[^0-9.]/g, '')) || 0;
+      } else {
+        // default to text
+        valA = cellA.toLowerCase();
+        valB = cellB.toLowerCase();
+      }
+
+      if (valA < valB) return descending ? 1 : -1;
+      if (valA > valB) return descending ? -1 : 1;
+      return 0;
+    });
+
+    // Re-insert sorted rows
+    rows.forEach(row => tbody.appendChild(row));
+  }
+});
+</script>
 {% endblock %}

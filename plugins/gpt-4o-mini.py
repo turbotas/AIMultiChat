@@ -1,7 +1,13 @@
 import os
 import openai
 
-PERSONALITY_NAME = "Minnie (ChatGPT 4o Mini)"
+PERSONALITY_NAME = "Cassie (ChatGPT 4o Mini)"
+PERSONALITY_DESC = "GPT-4o mini (“o” for “omni”) is a fast, affordable small model for focused tasks. It accepts both text and image inputs, and produces text outputs (including Structured Outputs). It is ideal for fine-tuning, and model outputs from a larger model like GPT-4o can be distilled to GPT-4o-mini to produce similar results at lower cost and latency."
+PERSONALITY_INTELLIGENCE = 2
+# price per million tokens use the dearest of input and output!
+PERSONALITY_COST = 0.6
+PERSONALITY_WINDOW = 128000
+PERSONALITY_MAXOUT = 16384
 
 # Create the OpenAI client using the new interface
 client = openai.Client(api_key=os.environ.get("CHATGPTAPIKEY"))
@@ -42,6 +48,7 @@ def generate_response(chat_title, participants, chat_history, new_message):
         BASE_SYSTEM_PROMPT
         + f"\nAdditionally, the chat is titled '{chat_title}'.\n"
         + f"Participants: {participants}.\n"
+        + f"IMPORTANT: Your assigned name for this chat is '{PERSONALITY_NAME}'. If someone asks your name or references you, reply with that exact name.\n"
     )
 
     # Start building the messages array

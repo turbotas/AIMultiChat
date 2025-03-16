@@ -1,7 +1,13 @@
 import os
 import openai
 
-PERSONALITY_NAME = "Mandy (ChatGPT o1-mini)"
+PERSONALITY_NAME = "Erica (ChatGPT o1-mini)"
+PERSONALITY_DESC = "The o1 reasoning model is designed to solve hard problems across domains. o1-mini is a faster and more affordable reasoning model, but we recommend using the newer o3-mini model that features higher intelligence at the same latency and price as o1-mini."
+PERSONALITY_INTELLIGENCE = 6
+# price per million tokens use the dearest of input and output!
+PERSONALITY_COST = 4.4
+PERSONALITY_WINDOW = 128000
+PERSONALITY_MAXOUT = 65536
 
 # Create the OpenAI client using the new interface
 client = openai.Client(api_key=os.environ.get("CHATGPTAPIKEY"))
@@ -41,6 +47,7 @@ def generate_response(chat_title, participants, chat_history, new_message):
         BASE_SYSTEM_PROMPT
         + f"\nAdditionally, the chat is titled '{chat_title}'.\n"
         + f"Participants: {participants}.\n"
+        + f"IMPORTANT: Your assigned name for this chat is '{PERSONALITY_NAME}'. If someone asks your name or references you, reply with that exact name.\n"
     )
 
     # The 'o1' model doesn't support "system" role. We degrade to "user" to avoid 400 errors.

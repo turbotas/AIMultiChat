@@ -1,6 +1,6 @@
-from flask import session
+from flask import session, current_app
 from flask_socketio import join_room, leave_room, emit
-from extensions import socketio, db, load_personalities
+from extensions import socketio, db
 from models import Chat, ChatHistory
 from datetime import datetime
 from sqlalchemy import func
@@ -9,8 +9,8 @@ import uuid  # For generating anonymous usernames
 # Tracks participants in each chat room (key=join_code, value=set of user names)
 participants = {}
 
-# Load your personality modules
-personalities = load_personalities()
+# REMOVE this line, as we no longer load personalities here:
+# personalities = load_personalities()
 
 @socketio.on('join')
 def handle_join(data):
@@ -122,16 +122,19 @@ def handle_chat_message(data):
         'db_id': new_message.id  # So new messages can be deleted in real time
     }, room=chat_uuid, include_self=True)
 
-    ###
     # Gather full context for the AI:
-    ###
     chat_title = chat.title  # The chat's name
     current_participants = list(participants.get(chat_uuid, set()))  # All users in the chat
     full_history = ChatHistory.query.filter_by(chat_id=numeric_chat_id).order_by(ChatHistory.id).all()  # Entire conversation
 
+    # Use current_app to get the single loaded personalities
+    from flask import current_app
+    all_personalities = current_app.loaded_personalities
+
     # Loop through AI personalities in the room
     for personality_name in current_participants:
-        if personality_name in personalities and username != personality_name:
+        # If personality_name is in the dictionary
+        if personality_name in all_personalities and username != personality_name:
             # Print debug info about what we'll pass
             print("\n===== AI Debug =====")
             print(f"Chat Title: {chat_title}")
@@ -141,10 +144,11 @@ def handle_chat_message(data):
             print(f"AI Personality: {personality_name}")
             print("===== End Debug ====\n")
 
-            # Suppose plugin's signature is:
-            # generate_response(title, participants, history, latest_user_msg)
-            # Adapt if your plugin's signature differs.
-            ai_response = personalities[personality_name].generate_response(
+            # Retrieve the plugin module
+            plugin_module = all_personalities[personality_name]["module"]
+
+            # Suppose plugin's signature is generate_response(title, participants, history, latest_user_msg)
+            ai_response = plugin_module.generate_response(
                 chat_title,
                 current_participants,
                 full_history,
@@ -198,6 +202,7 @@ def handle_delete_message(data):
         print(f"DEBUG: Message {message_id} not found.")
         emit('status', {'msg': f'Error: Message {message_id} not found.'}, room=chat_uuid)
 
+
 @socketio.on('add_personality')
 def handle_add_personality(data):
     """
@@ -208,7 +213,10 @@ def handle_add_personality(data):
 
     print(f"DEBUG: Received add_personality event for chat={chat_uuid}, AI={personality_name}")
 
-    if personality_name not in personalities:
+    from flask import current_app
+    all_personalities = current_app.loaded_personalities
+
+    if personality_name not in all_personalities:
         emit('status', {'msg': f'Error: Personality \"{personality_name}\" not found.'}, room=chat_uuid)
         return
 
@@ -225,6 +233,7 @@ def handle_add_personality(data):
     else:
         print(f"DEBUG: AI '{personality_name}' was already in the room={chat_uuid}")
 
+
 @socketio.on('remove_personality')
 def handle_remove_personality(data):
     """
@@ -240,6 +249,7 @@ def handle_remove_personality(data):
         print(f"DEBUG: AI '{personality_name}' removed from room={chat_uuid}")
         emit('participant_update', {'participants': list(participants[chat_uuid])}, room=chat_uuid)
         emit('status', {'msg': f'{personality_name} has left the chat.'}, room=chat_uuid)
+
 
 @socketio.on('disconnect')
 def handle_disconnect():

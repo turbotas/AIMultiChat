@@ -1,7 +1,13 @@
 import os
 import openai
 
-PERSONALITY_NAME = "Sammie (ChatGPT 4 turbo)"
+PERSONALITY_NAME = "Brenda (ChatGPT 4 turbo)"
+PERSONALITY_DESC = "GPT-4 Turbo is the next generation of GPT-4, an older high-intelligence GPT model. It was designed to be a cheaper, better version of GPT-4. Today, we recommend using a newer model like GPT-4o."
+PERSONALITY_INTELLIGENCE = 2
+# price per million tokens use the dearest of input and output!
+PERSONALITY_COST = 30
+PERSONALITY_WINDOW = 128000
+PERSONALITY_MAXOUT = 4096
 
 # Create the OpenAI client using the new interface
 client = openai.Client(api_key=os.environ.get("CHATGPTAPIKEY"))
@@ -42,6 +48,7 @@ def generate_response(chat_title, participants, chat_history, new_message):
         BASE_SYSTEM_PROMPT
         + f"\nAdditionally, the chat is titled '{chat_title}'.\n"
         + f"Participants: {participants}.\n"
+        + f"IMPORTANT: Your assigned name for this chat is '{PERSONALITY_NAME}'. If someone asks your name or references you, reply with that exact name.\n"
     )
 
     # Start building the messages array

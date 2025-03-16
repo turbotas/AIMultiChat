@@ -1,7 +1,13 @@
 import os
 import openai
 
-PERSONALITY_NAME = "Susan (ChatGPT 3.5 turbo)"
+PERSONALITY_NAME = "Amanda (ChatGPT 3.5 turbo)"
+PERSONALITY_DESC = "GPT-3.5 Turbo models can understand and generate natural language or code and have been optimized for chat using the Chat Completions API but work well for non-chat tasks as well. As of July 2024, use gpt-4o-mini in place of GPT-3.5 Turbo, as it is cheaper, more capable, multimodal, and just as fast. GPT-3.5 Turbo is still available for use in the API."
+PERSONALITY_INTELLIGENCE = 1
+# price per million tokens use the dearest of input and output!
+PERSONALITY_COST = 1.5
+PERSONALITY_WINDOW = 16385
+PERSONALITY_MAXOUT = 4096
 
 # Create the OpenAI client using the new interface
 client = openai.Client(api_key=os.environ.get("CHATGPTAPIKEY"))
@@ -42,6 +48,7 @@ def generate_response(chat_title, participants, chat_history, new_message):
         BASE_SYSTEM_PROMPT
         + f"\nAdditionally, the chat is titled '{chat_title}'.\n"
         + f"Participants: {participants}.\n"
+        + f"IMPORTANT: Your assigned name for this chat is '{PERSONALITY_NAME}'. If someone asks your name or references you, reply with that exact name.\n"
     )
 
     # Start building the messages array

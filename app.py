@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from dotenv import load_dotenv
-from extensions import load_personalities
 import os
 
 # Load environment variables from .env file
@@ -12,7 +11,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Import db and socketio from extensions and initialize them
-from extensions import db, socketio
+from extensions import db, socketio, load_personalities
 db.init_app(app)
 socketio.init_app(app, async_mode='threading')  # Return to default async mode
 
@@ -30,33 +29,46 @@ app.register_blueprint(admin_chat_bp)
 # Import the event handlers AFTER socketio is initialized.
 import socketio_events
 
+# 1) Load personalities exactly once, store in app.loaded_personalities
+app.loaded_personalities = load_personalities()
+
 @app.route('/')
 def index():
-    return render_template('index.html')
+    """
+    The homepage.
+    We'll sort app.loaded_personalities.values() by .name and pass them to index.html
+    """
+    personalities_list = sorted(
+        app.loaded_personalities.values(),
+        key=lambda p: p["name"].lower()
+    )
+
+    return render_template('index.html', personalities=personalities_list)
 
 @app.route('/chat/<string:join_code>')
 def chat_room(join_code):
-    # Lookup the chat via join_code
+    """
+    Shows the chat page for a specific chat,
+    using the alpha-sorted list of personality keys for the dropdown.
+    """
     chat = Chat.query.filter_by(join_code=join_code).first()
     if not chat:
         flash('Error: Chat room not found.', 'danger')
         return redirect(url_for('index'))
 
-    # Convert numeric chat.id -> string to store in ChatHistory
     numeric_chat_id = str(chat.id)
 
-    # Retrieve messages from DB via numeric ID
+    # Retrieve messages from DB
     messages = ChatHistory.query.filter_by(chat_id=numeric_chat_id).order_by(ChatHistory.id).all()
 
-    # Provide chat_id to the template as the join_code (used by the client & socket events)
-    # Also load the personalities so the dropdown isn't empty
-    personalities_list = list(load_personalities().keys())
+    # 2) Instead of LOADED_PERSONALITIES, we do:
+    sorted_personality_keys = sorted(app.loaded_personalities.keys(), key=str.lower)
 
     return render_template(
         'chat.html',
         chat_id=join_code,  # Pass the join_code for the user
         messages=messages,
-        personalities=personalities_list
+        personalities=sorted_personality_keys
     )
 
 if __name__ == '__main__':
