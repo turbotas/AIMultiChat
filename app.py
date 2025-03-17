@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session  # <-- import session
 from dotenv import load_dotenv
 import os
+import markdown
 
 # Load environment variables from .env file
 load_dotenv()
@@ -36,14 +37,34 @@ app.loaded_personalities = load_personalities()
 def index():
     """
     The homepage.
-    We'll sort app.loaded_personalities.values() by .name and pass them to index.html
+    We'll sort app.loaded_personalities.values() by .name and pass them to index.html,
+    AND load README.md -> HTML to display on the page as well.
     """
+
+    # 1) Read README.md from disk
+    readme_md = ""
+    try:
+        with open("README.md", "r", encoding="utf-8") as f:
+            readme_md = f.read()
+    except FileNotFoundError:
+        # fallback if there's no README
+        readme_md = "# Welcome to AIMultiChat\n*(No README.md found.)*"
+
+    # Enable fenced code blocks and optional syntax highlighting
+    readme_html = markdown.markdown(
+        readme_md,
+        extensions=["fenced_code", "codehilite"]
+    )
+
     personalities_list = sorted(
         app.loaded_personalities.values(),
         key=lambda p: p["name"].lower()
     )
 
-    return render_template('index.html', personalities=personalities_list)
+    return render_template(
+        'index.html', personalities=personalities_list,
+        readme_html=readme_html  # We'll display this in index.html
+    )
 
 @app.route('/chat/<string:join_code>')
 def chat_room(join_code):
@@ -86,11 +107,11 @@ if __name__ == '__main__':
         # Auto-create Admin account if none exists
         if User.query.count() == 0:
             admin = User(
-                username='admin@example.com',
-                friendly_name='Admin',
+                username='test@aimultichat.null',
+                friendly_name='Temporary Administrator',
                 is_admin=True
             )
-            admin.set_password('admin123')  # Known password for initial setup
+            admin.set_password('F7svijfIin')  # Known password for initial setup
             db.session.add(admin)
             db.session.commit()
 

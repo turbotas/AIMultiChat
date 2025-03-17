@@ -6,6 +6,10 @@
   <h1 class="my-4">Welcome to AIMultiChat</h1>
 </div>
 
+<div>
+  {{ readme_html|safe }}
+</div>
+
 {% if personalities and personalities|length > 0 %}
   <h3 class="mb-3">Available Personalities</h3>
   <table id="personalityTable" class="table table-striped table-bordered">

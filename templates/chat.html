@@ -111,23 +111,46 @@
     console.log("Received chat_message:", data);
     const chatDiv = document.getElementById('chat');
 
+    // Create a <p> element
     const p = document.createElement('p');
+    // Minimal spacing
     p.style.margin = '5px 0';
-    p.id = `message-${data.db_id || ''}`;
-    p.innerHTML = `<strong>#${data.room_message_id} ${data.username}:</strong> ${data.message}`;
 
-    // If admin, add delete button
+    // Use flex so the button and text can be horizontally aligned
+    p.style.display = 'flex';
+    p.style.alignItems = 'center';
+
+    // Assign an ID for potential future reference
+    p.id = `message-${data.db_id || ''}`;
+
+    // If admin, create the delete button on the left
     if (isAdmin) {
       const btn = document.createElement('button');
-      btn.className = 'btn btn-danger btn-sm ms-2';
+      // Match the inline style from your HTML snippet
+      btn.className = 'btn btn-danger'; // remove btn-sm so we can apply custom size
+      btn.style.padding = '0.15rem 0.3rem';
+      btn.style.fontSize = '0.75rem';
+      btn.style.lineHeight = '1';
+      btn.style.marginRight = '0.4rem';
       btn.textContent = '🗑';
       btn.onclick = () => deleteMessage(data.db_id);
+
+      // Append the button to <p> first => so it's on the left
       p.appendChild(btn);
     }
 
+    // Then create a container for the message text
+    const textSpan = document.createElement('span');
+    textSpan.innerHTML = `<strong>#${data.room_message_id} ${data.username}:</strong> ${data.message}`;
+
+    // Append the textSpan after the button
+    p.appendChild(textSpan);
+
+    // Finally append the <p> to the chat
     chatDiv.appendChild(p);
     chatDiv.scrollTop = chatDiv.scrollHeight;
   });
+
 
   // Participant list updates
   socket.on('participant_update', (data) => {
