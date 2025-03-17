@@ -50,10 +50,15 @@ def index():
         # fallback if there's no README
         readme_md = "# Welcome to AIMultiChat\n*(No README.md found.)*"
 
-    # Enable fenced code blocks and optional syntax highlighting
     readme_html = markdown.markdown(
         readme_md,
-        extensions=["fenced_code", "codehilite"]
+        extensions=["fenced_code", "codehilite"],
+        extension_configs={
+            "codehilite": {
+                "css_class": "highlight",  # instead of "codehilite"
+                "linenums": False
+            }
+        }
     )
 
     personalities_list = sorted(

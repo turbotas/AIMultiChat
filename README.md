@@ -13,14 +13,14 @@ AIMultiChat is a Python/Flask-based application that supports **multi-party** AI
 - **Dynamic AI Plugin System**  
   AI personalities are "plugins" stored in a `plugins/` folder, each describing a custom prompt or logic. The system automatically loads them once at startup.
 - **Flexible Architecture**  
-  - Uses Flask for routing and serving HTML templates  
-  - Socket.IO for real-time communication  
-  - SQLAlchemy for database (SQLite by default)
+  Uses Flask for routing and serving HTML templates  
+  Socket.IO for real-time communication  
+  SQLAlchemy for database (SQLite by default)
 - **Pruning**
-  - In particular each conversation can be pruned to preserve memory and context window of AI agents and may help keep costs under control.
+  In particular each conversation can be pruned to preserve memory and context window of AI agents and may help keep costs under control.
 - **Security**
-  - Chats can be public or private
-  - admins can create, edit and remove chats
+  Chats can be public or private
+  Admins can create, edit and remove chats
 
 ## Installation
 
@@ -53,4 +53,7 @@ AIMultiChat is a Python/Flask-based application that supports **multi-party** AI
   Only runs with a local flat database at the moment: add support for MySQL etc.
 - **AAA**  
   AAA model is very simple and needs revamping.
-- 
+- **Export/Import**
+  To support Dev>Prod workflow, need to be able to backup and restore the database such as via database download and upload and this needs to work across versions for example download from SQLite and upload to MySQL etc.
+- **Prod Ready**
+  Need to be able to deply container based version that supports external data source and external certificates (from the hosting server).
