@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session  # <-- import session
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from dotenv import load_dotenv
 import os
 import markdown
@@ -14,23 +14,20 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Import db and socketio from extensions and initialize them
 from extensions import db, socketio, load_personalities
 db.init_app(app)
-socketio.init_app(app, async_mode='threading')  # Return to default async mode
+socketio.init_app(app, async_mode='threading')
 
 # Import models and blueprints
-from models import HumanUser, AIAgent, Chat, ChatParticipant, ChatHistory, User
+from models import AIAgent, Chat, ChatParticipant, ChatHistory, User
 from auth import auth_bp
 from auth.admin import admin_bp
 from auth.admin_chat import admin_chat_bp
 
-# Register Blueprints
 app.register_blueprint(auth_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(admin_chat_bp)
 
-# Import the event handlers AFTER socketio is initialized.
 import socketio_events
 
-# 1) Load personalities exactly once, store in app.loaded_personalities
 app.loaded_personalities = load_personalities()
 
 @app.route('/')
@@ -40,14 +37,11 @@ def index():
     We'll sort app.loaded_personalities.values() by .name and pass them to index.html,
     AND load README.md -> HTML to display on the page as well.
     """
-
-    # 1) Read README.md from disk
     readme_md = ""
     try:
         with open("README.md", "r", encoding="utf-8") as f:
             readme_md = f.read()
     except FileNotFoundError:
-        # fallback if there's no README
         readme_md = "# Welcome to AIMultiChat\n*(No README.md found.)*"
 
     readme_html = markdown.markdown(
@@ -55,7 +49,7 @@ def index():
         extensions=["fenced_code", "codehilite"],
         extension_configs={
             "codehilite": {
-                "css_class": "highlight",  # instead of "codehilite"
+                "css_class": "highlight",
                 "linenums": False
             }
         }
@@ -67,58 +61,54 @@ def index():
     )
 
     return render_template(
-        'index.html', personalities=personalities_list,
-        readme_html=readme_html  # We'll display this in index.html
+        'index.html',
+        personalities=personalities_list,
+        readme_html=readme_html
     )
 
 @app.route('/chat/<string:join_code>')
 def chat_room(join_code):
-    """
-    Shows the chat page for a specific chat,
-    using the alpha-sorted list of personality keys for the left column.
-    """
     chat = Chat.query.filter_by(join_code=join_code).first()
     if not chat:
         flash('Error: Chat room not found.', 'danger')
         return redirect(url_for('index'))
 
     numeric_chat_id = str(chat.id)
-
-    # Retrieve messages from DB
     messages = ChatHistory.query.filter_by(chat_id=numeric_chat_id).order_by(ChatHistory.id).all()
-
-    # Instead of LOADED_PERSONALITIES, we do:
     sorted_personality_keys = sorted(app.loaded_personalities.keys(), key=str.lower)
 
-    # If the user is admin, build up a list of all chats or some subset
     available_chats = []
     if session.get('is_admin'):
-        # For example, show all
         available_chats = Chat.query.all()
 
     return render_template(
         'chat.html',
-        chat_id=join_code,  # Pass the join_code for the user
+        chat_id=join_code,
         messages=messages,
         personalities=sorted_personality_keys,
         is_admin=session.get('is_admin', False),
-        available_chats=available_chats  # pass it here
+        available_chats=available_chats
     )
 
+# --------------------------------------------------------------------------
+# NEW: run db.create_all() + default admin at import time (for Gunicorn, etc.)
+# --------------------------------------------------------------------------
+with app.app_context():
+    db.create_all()
+    if User.query.count() == 0:
+        print("No users found. Creating default admin user.")
+        admin = User(
+            username='test@aimultichat.null',
+            friendly_name='Temporary Administrator',
+            is_admin=True
+        )
+        admin.set_password('F7svijfIin')
+        db.session.add(admin)
+        db.session.commit()
+        print("Created default admin user!")
+    else:
+        print("User table already populated; skipping creation.")
+
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()  # Ensure tables are created
-
-        # Auto-create Admin account if none exists
-        if User.query.count() == 0:
-            admin = User(
-                username='test@aimultichat.null',
-                friendly_name='Temporary Administrator',
-                is_admin=True
-            )
-            admin.set_password('F7svijfIin')  # Known password for initial setup
-            db.session.add(admin)
-            db.session.commit()
-
     print("🚀 Starting in development mode (no SSL)")
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)

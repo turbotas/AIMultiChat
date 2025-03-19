@@ -31,7 +31,7 @@ AIMultiChat is a Python/Flask-based application that supports **multi-party** AI
    python -m venv venv
    source venv/bin/activate  # or venv\Scripts\activate on Windows etc
    pip install -r requirements.txt
-   copy .env.dist to .env and edit settings as required, in particulaar chatGPT API key will be needed to add any agents to chats.
+   copy .env.dist to .env and edit settings as required, in particular chatGPT API key will be needed to add any agents to chats.
    python app.py
    
    The app will now be running on http://localhost:5000/
@@ -39,10 +39,12 @@ AIMultiChat is a Python/Flask-based application that supports **multi-party** AI
 ```
   
 2. **Container Deployment** There is also a Dockerfile if you want to run in a container.
-   ```bash
+```bash
    docker build -t aimultichat .
    docker run -p 5000:5000 aimultichat
-    ```
+   or exporting the dockerfile
+   docker save aimultichat -o aimultichat.tar
+```
 
 ## Known Issues
 - **Translation**  
