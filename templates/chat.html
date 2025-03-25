@@ -6,39 +6,77 @@
   <!-- Left Column (20% width) -->
   <div class="col-md-3" style="border-right: 1px solid #ccc;">
     <!-- Participant list -->
-    <h5>Participants:</h5>
-    <ul id="participantList" style="list-style-type: none; padding-left: 0;"></ul>
+    <h5>
+      Participants:
+      <span
+        id="participantsToggleBtn"
+        style="cursor: pointer; font-weight: bold;"
+        onclick="toggleVisibility('participantContainer', 'participantsToggleBtn')"
+      >
+        [-]
+      </span>
+    </h5>
+    <div id="participantContainer">
+      <ul id="participantList" style="list-style-type: none; padding-left: 0;"></ul>
+    </div>
 
-    <h5 class="mt-4">AI Personalities</h5>
-    {% for personality in personalities %}
-      <div id="personality-{{ personality }}" class="d-flex mb-2" style="align-items: center;">
-        <span class="flex-grow-1">{{ personality }}</span>
-        <!-- We'll show/hide these via JS in participant_update -->
-        <button class="btn btn-sm btn-success me-1 add-btn" onclick="addPersonality('{{ personality }}')">
-          Add
-        </button>
-        <button class="btn btn-sm btn-secondary remove-btn" onclick="removePersonality('{{ personality }}')">
-          Remove
-        </button>
-      </div>
-    {% endfor %}
+    <!-- AI Personalities -->
+    <h5 class="mt-4">
+      AI Personalities
+      <span
+        id="aiPersonalityToggleBtn"
+        style="cursor: pointer; font-weight: bold;"
+        onclick="toggleVisibility('aiPersonalityContainer','aiPersonalityToggleBtn')"
+      >
+        [-]
+      </span>
+    </h5>
+    <div id="aiPersonalityContainer">
+      {% for personality in personalities %}
+        <div id="personality-{{ personality }}" class="d-flex mb-2" style="align-items: center;">
+          <span class="flex-grow-1">{{ personality }}</span>
+          <!-- We'll show/hide these via JS in participant_update -->
+          <button class="btn btn-sm btn-success me-1 add-btn" onclick="addPersonality('{{ personality }}')">
+            Add
+          </button>
+          <button class="btn btn-sm btn-secondary remove-btn" onclick="removePersonality('{{ personality }}')">
+            Remove
+          </button>
+        </div>
+      {% endfor %}
+    </div>
 
     <!-- List of Chats (if admin) -->
     {% if is_admin %}
-      <h5 class="mt-4">Chats</h5>
+      <h5 class="mt-4">
+        Chats
+        <!-- ID for the toggle button -->
+        <span
+          id="chatsToggleBtn"
+          style="cursor: pointer; font-weight: bold;"
+          onclick="toggleVisibility('chatsContainer', 'chatsToggleBtn')"
+        >
+          [-] <!-- Show minus sign by default (since it's currently expanded) -->
+        </span>
+      </h5>
+      <!-- Section to toggle -->
+      <div id="chatsContainer">
       {% for c in available_chats %}
-        <div class="d-flex mb-2" style="align-items: center;">
-          <span class="flex-grow-1">{{ c.title }}</span>
-          <button class="btn btn-sm btn-primary"
-                  onclick="joinChat('{{ c.join_code }}')">Join</button>
-        </div>
+        {% if c.join_code != chat_id %}
+          <div class="d-flex mb-2" style="align-items: center;">
+            <span class="flex-grow-1">{{ c.title }}</span>
+            <button class="btn btn-sm btn-primary" onclick="joinChat('{{ c.join_code }}')">Join</button>
+          </div>
+        {% endif %}
       {% endfor %}
+      </div>
     {% endif %}
+
   </div>
 
   <!-- Right Column (80% width) -->
   <div class="col-md-9">
-    <h1>Chat Room</h1>
+    <h2>{{ chat_title }}</h2>
 
     <!-- Chat messages display -->
     <div id="chat" class="border rounded p-3 mb-3" style="height:500px; overflow-y:scroll;">
@@ -251,5 +289,22 @@
     // Just redirect to that chat's URL
     window.location.href = `/chat/${joinCode}`;
   }
+
+  function toggleVisibility(containerId, toggleBtnId) {
+    const container = document.getElementById(containerId);
+    const toggleBtn = document.getElementById(toggleBtnId);
+    if (!container || !toggleBtn) return;
+
+    // If currently hidden, show it and set the text to "[-]".
+    // Otherwise, hide it and set the text to "[+]".
+    if (container.style.display === 'none') {
+      container.style.display = 'block';
+      toggleBtn.textContent = '[-]';
+    } else {
+      container.style.display = 'none';
+      toggleBtn.textContent = '[+]';
+    }
+  }
+
 </script>
 {% endblock %}

@@ -29,24 +29,24 @@ def logout():
     flash('Logged out successfully', 'info')
     return redirect(url_for('auth.login'))
 
-@auth_bp.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        friendly_name = request.form['friendly_name']
-
-        if User.query.filter_by(username=email).first():
-            flash('Email is already registered.', 'danger')
-            return redirect(url_for('auth.register'))
-
-        hashed_password = generate_password_hash(password)
-        new_user = User(username=email, password_hash=hashed_password, friendly_name=friendly_name, is_admin=False)
-
-        db.session.add(new_user)
-        db.session.commit()
-
-        flash('Registration successful. You can now log in.', 'success')
-        return redirect(url_for('auth.login'))
-
-    return render_template('register.html')
+#@auth_bp.route('/register', methods=['GET', 'POST'])
+#def register():
+#    if request.method == 'POST':
+#        email = request.form['email']
+#        password = request.form['password']
+#        friendly_name = request.form['friendly_name']
+#
+#        if User.query.filter_by(username=email).first():
+#            flash('Email is already registered.', 'danger')
+#            return redirect(url_for('auth.register'))
+#
+#        hashed_password = generate_password_hash(password)
+#        new_user = User(username=email, password_hash=hashed_password, friendly_name=friendly_name, is_admin=False)
+#
+#        db.session.add(new_user)
+#        db.session.commit()
+#
+#        flash('Registration successful. You can now log in.', 'success')
+#        return redirect(url_for('auth.login'))
+#
+#    return render_template('register.html')

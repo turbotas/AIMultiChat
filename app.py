@@ -84,6 +84,7 @@ def chat_room(join_code):
     return render_template(
         'chat.html',
         chat_id=join_code,
+        chat_title=chat.title,
         messages=messages,
         personalities=sorted_personality_keys,
         is_admin=session.get('is_admin', False),
