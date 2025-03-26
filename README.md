@@ -59,3 +59,6 @@ AIMultiChat is a Python/Flask-based application that supports **multi-party** AI
   To support Dev>Prod workflow, need to be able to backup and restore the database such as via database download and upload and this needs to work across versions for example download from SQLite and upload to MySQL etc.
 - **Prod Ready**
   Need to be able to deply container based version that supports external data source and external certificates (from the hosting server).
+
+  ![Screenshot 2025-03-26 100105](https://github.com/user-attachments/assets/5166c02c-88ce-4c5d-b5ce-dbee4c419aec)
+
